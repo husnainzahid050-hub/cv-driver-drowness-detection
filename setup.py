@@ -12,7 +12,7 @@ setup(
     description="Real-time driver drowsiness detection using MediaPipe Face Mesh",
     author="Subhan",
     author_email="subhan@uajk.edu.pk",
-    url="https://github.com/subhan/driver-drowsiness-detection",
+    url="https://github.com/husnainzahid050-hub/cv-driver-drowness-detection",
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[

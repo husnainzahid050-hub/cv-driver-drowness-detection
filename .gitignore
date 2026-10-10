@@ -14,7 +14,11 @@ build/
 # Project runtime files
 logs/
 screenshots/
-assets/*.wav
+.pytest_cache/
+
+# Local-only files
+final year project documentation.docx
+pyhton --version.txt
 
 # IDE
 .vscode/

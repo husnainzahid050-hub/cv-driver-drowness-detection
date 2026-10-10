@@ -3,7 +3,7 @@
 ║        DRIVER DROWSINESS DETECTION SYSTEM                    ║
 ║        Using MediaPipe Face Mesh + EAR Algorithm             ║
 ║        Final Year Project — University of AJ&K               ║
-║        By: Subhan                                             ║
+║        By: Name : M Subhan Munir Abbasi & Hussnian Abbasi    |                                         ║
 ╚══════════════════════════════════════════════════════════════╝
 
 Entry point. Run this file to start the system.
@@ -63,7 +63,6 @@ def print_banner():
     print("\n" + "═" * 65)
     print("  🚗  DRIVER DROWSINESS DETECTION SYSTEM")
     print("       University of Azad Jammu & Kashmir | FYP Project")
-    print("       By: Subhan")
     print("═" * 65)
     print(f"  EAR Threshold  : {Settings.EAR_THRESHOLD}")
     print(f"  Frame Limit    : {Settings.CONSEC_FRAMES} consecutive closed-eye frames")

@@ -34,6 +34,9 @@ driver_drowsiness_detection/
 ├── src/
 │   ├── detector.py             ← Main detection loop (core logic)
 │   ├── ear_calculator.py       ← EAR formula implementation
+│   ├── yawn_detector.py        ← Mouth Aspect Ratio (MAR) yawn detection
+│   ├── head_pose.py            ← Head pose (pitch/yaw/roll) via solvePnP
+│   ├── glasses_detector.py     ← Glasses detection + EAR adjustment
 │   ├── alert_manager.py        ← Audio + visual + vibration alerts
 │   ├── display.py              ← OpenCV UI renderer
 │   └── logger.py               ← CSV session logging
@@ -45,7 +48,10 @@ driver_drowsiness_detection/
 │   ├── test_ear_calculator.py  ← EAR unit tests
 │   └── test_alert_manager.py   ← Alert system tests
 │
-├── assets/                     ← Auto-generated audio files
+├── docs/
+│   └── architecture.md         ← System architecture notes
+│
+├── assets/                     ← Alert sound files
 ├── logs/                       ← Session CSV logs
 ├── screenshots/                ← Saved screenshots
 │
