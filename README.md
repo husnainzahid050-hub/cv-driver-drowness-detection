@@ -2,7 +2,7 @@
 
 **Final Year Project (FYP)**  
 University of Azad Jammu and Kashmir  
-By: **Subhan**
+By: **Husnain & Subhan**
 
 ---
 
