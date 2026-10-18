@@ -121,12 +121,46 @@ class Settings:
     # ──────────────────────────────────────────────────────────────
 
     # MAR value above which mouth is considered "wide open" (yawning)
-    # Normal speech: 0.3–0.5  |  Yawn: > 0.6
-    MAR_THRESHOLD: float = 0.60
+    # Normal speech: 0.3–0.5  |  Yawn: > 0.5
+    MAR_THRESHOLD: float = 0.50
 
-    # Consecutive frames of open mouth before yawn is confirmed
-    # At 30 FPS: 15 frames ≈ 0.5 seconds
-    YAWN_CONSEC_FRAMES: int = 15
+    # Hysteresis: once a yawn has started, it only ends when MAR drops
+    # below this lower value (prevents flicker / double counting)
+    MAR_EXIT_THRESHOLD: float = 0.40
+
+    # Frames of wide-open mouth before yawn is confirmed.
+    # Yawns last 2–6 s, speech openings are short → duration filters talking.
+    # At 30 FPS: 30 frames ≈ 1 second
+    YAWN_CONSEC_FRAMES: int = 30
+
+    # Brief dips below MAR_EXIT_THRESHOLD tolerated without ending the yawn
+    # At 30 FPS: 6 frames ≈ 0.2 seconds
+    YAWN_GAP_FRAMES: int = 6
+
+    # ── Yawn vs. surprise / shock ("😮") ──
+    # Yawn:     mouth opens SLOWLY, head tilts UP/back, eyes lazy / half-closed
+    # Surprise: mouth opens SUDDENLY, head slightly FORWARD, eyes wide open
+
+    # MAR at which the mouth is considered "starting to open"
+    MAR_OPEN_START: float = 0.30
+
+    # Opening from MAR_OPEN_START to MAR_THRESHOLD within this many
+    # frames counts as a sudden (surprise) opening
+    # At 30 FPS: 4 frames ≈ 0.13 seconds (scaled to the real camera FPS)
+    YAWN_SUDDEN_ONSET_FRAMES: int = 4
+
+    # Head tilt up/back (degrees, relative to the driver's normal pose)
+    # that supports a yawn
+    YAWN_HEAD_TILT_DEG: float = 5.0
+
+    # Head moving forward (degrees, relative to normal pose) that
+    # supports surprise / shock
+    SURPRISE_HEAD_FORWARD_DEG: float = 4.0
+
+    # EAR change relative to the driver's normal EAR:
+    #   above (1 + ratio) → eyes widened (surprise)
+    #   below (1 - ratio) → eyes narrowed (yawn)
+    YAWN_EYE_CHANGE_RATIO: float = 0.10
 
     # ──────────────────────────────────────────────────────────────
     # Head Pose Estimation

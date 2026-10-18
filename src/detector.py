@@ -102,8 +102,13 @@ class DrowsinessDetector:
         print("  [Detector] Detection loop running...\n")
         os.makedirs(Settings.SCREENSHOT_DIR, exist_ok=True)
 
+        # TURN OFF button on the dashboard (mouse click)
+        self._turn_off = False
+        cv2.namedWindow(Settings.WINDOW_TITLE)
+        cv2.setMouseCallback(Settings.WINDOW_TITLE, self._on_mouse)
+
         try:
-            while True:
+            while not self._turn_off:
                 ret, frame = cap.read()
                 if not ret:
                     print("  [Detector] Frame read failed.")
@@ -149,10 +154,21 @@ class DrowsinessDetector:
                 elif key == ord('s'):
                     self._save_screenshot(display_frame)
 
+                # Window closed with the X button
+                if cv2.getWindowProperty(Settings.WINDOW_TITLE, cv2.WND_PROP_VISIBLE) < 1:
+                    break
+
+            if self._turn_off:
+                print("\n  [Detector] TURN OFF button pressed — shutting down")
+
         except KeyboardInterrupt:
             print("\n  [Detector] Interrupted")
         finally:
             self._cleanup(cap)
+
+    def _on_mouse(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN and self.renderer.is_off_button(x, y):
+            self._turn_off = True
 
     def _analyse_frame(self, frame: np.ndarray) -> dict:
         h, w = frame.shape[:2]
@@ -190,8 +206,13 @@ class DrowsinessDetector:
 
         # Yawn
         mar = compute_mar(extract_mouth_coords(lms, w, h))
-        yawn_active = self.yawn_detector.update(mar)
-        mouth_color = Settings.COLOR_ALERT if yawn_active else (0, 200, 100)
+        yawn_active = self.yawn_detector.update(mar, pitch, avg_ear, self.current_fps)
+        if yawn_active:
+            mouth_color = Settings.COLOR_ALERT
+        elif self.yawn_detector.surprise_active:
+            mouth_color = Settings.COLOR_WARNING   # wide open, but surprise
+        else:
+            mouth_color = (0, 200, 100)
         cv2.polylines(frame, [get_mouth_outline_coords(lms, w, h)], True, mouth_color, 1, cv2.LINE_AA)
 
         return {"face_detected": True,
@@ -225,9 +246,9 @@ class DrowsinessDetector:
         ear_frames_needed = int(Settings.CONSEC_FRAMES * (1.5 if glasses else 1.0))
         ear_triggered  = self.consec_frames >= ear_frames_needed
         pose_triggered = self.pose_consec   >= Settings.HEAD_POSE_CONSEC_FRAMES
-        yawn_plus_ear  = yawn and (self.consec_frames >= Settings.CONSEC_FRAMES // 2)
+        yawn_triggered = yawn
 
-        should_alert = ear_triggered or pose_triggered or yawn_plus_ear
+        should_alert = ear_triggered or pose_triggered or yawn_triggered
 
         if should_alert:
             if not self.alert_active:
@@ -236,7 +257,7 @@ class DrowsinessDetector:
                 parts = []
                 if ear_triggered:  parts.append(f"EAR={avg_ear:.3f}")
                 if pose_triggered: parts.append(f"Pitch={pitch:.1f}deg")
-                if yawn_plus_ear:  parts.append("Yawn+EAR")
+                if yawn_triggered: parts.append("Yawn")
                 if glasses:        parts.append("[GLASSES MODE]")
                 print(f"\n  [Alert #{self.total_alerts}] DROWSINESS | {' | '.join(parts)}")
             self.alert_manager.trigger_alert(self.frame_counter)

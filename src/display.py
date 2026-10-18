@@ -41,6 +41,9 @@ class DisplayRenderer:
         # Pre-compute total window width
         self.total_width = self.fw + self.dw
 
+        # TURN OFF button rectangle (x1, y1, x2, y2), set on each render
+        self.off_button = (0, 0, 0, 0)
+
     # ──────────────────────────────────────────────────────────────
     #  Main render method
     # ──────────────────────────────────────────────────────────────
@@ -318,7 +321,21 @@ class DisplayRenderer:
                     (6, self.fh - 12), self.FONT, 0.30,
                     (100, 100, 100), 1, cv2.LINE_AA)
 
+        # TURN OFF button (bottom-right) — click to close the system
+        bx1, by1, bx2, by2 = self.dw - 92, hint_y, self.dw - 6, self.fh - 4
+        cv2.rectangle(panel, (bx1, by1), (bx2, by2), (40, 40, 200), -1)
+        cv2.rectangle(panel, (bx1, by1), (bx2, by2), Settings.COLOR_WHITE, 1)
+        cv2.putText(panel, "TURN OFF", (bx1 + 10, by2 - 8), self.FONT_BOLD, 0.42,
+                    Settings.COLOR_WHITE, 1, cv2.LINE_AA)
+        # Store in full-window coordinates (dashboard sits right of camera)
+        self.off_button = (self.fw + bx1, by1, self.fw + bx2, by2)
+
         return panel
+
+    def is_off_button(self, x: int, y: int) -> bool:
+        """True if window pixel (x, y) is inside the TURN OFF button."""
+        x1, y1, x2, y2 = self.off_button
+        return x1 <= x <= x2 and y1 <= y <= y2
 
     def _draw_section(self, panel, y, title) -> int:
         """Draw a section header."""

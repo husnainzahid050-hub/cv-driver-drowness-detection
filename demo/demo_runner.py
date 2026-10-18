@@ -57,14 +57,14 @@ SCENARIO = [
     # (secs,  ear,   mar,   pitch,  roll,   label)
     (5.0,  0.29,  0.05,   2.0,    1.0,  "Normal driving — fully awake"),
     (3.0,  0.22,  0.10,   8.0,    2.0,  "Getting tired — eyes drooping"),
-    (3.5,  0.27,  0.68,   5.0,    1.0,  "YAWNING — mouth wide open"),
+    (3.5,  0.19,  0.68,  -6.0,    1.0,  "YAWNING — head tilts back, eyes squint"),
     (3.0,  0.20,  0.12,  10.0,    3.0,  "Still tired after yawn"),
     (4.0,  0.09,  0.08,  28.0,    4.0,  "FALLING ASLEEP — eyes closed + head nodding"),
     (3.0,  0.28,  0.06,   5.0,    2.0,  "Alert fired — driver woke up"),
     (2.0,  0.29,  0.04,   3.0,    1.0,  "Brief normal period"),
     (3.0,  0.24,  0.08,   5.0,   32.0,  "HEAD TILT — dozing sideways"),
     (2.0,  0.27,  0.06,   4.0,    2.0,  "Recovery from tilt"),
-    (2.5,  0.25,  0.70,  12.0,    3.0,  "YAWNING AGAIN — second yawn"),
+    (2.5,  0.20,  0.70,  -4.0,    3.0,  "YAWNING AGAIN — second yawn"),
     (3.0,  0.14,  0.15,  22.0,    5.0,  "Yawn + drowsy EAR combined"),
     (2.0,  0.28,  0.05,   3.0,    1.0,  "Recovery"),
     (3.0,  0.30,  0.04,   2.0,    1.0,  "Normal — fully awake"),
@@ -377,8 +377,19 @@ def run_demo():
     # Print phase changes to console
     _last_label = ""
 
+    # TURN OFF button on the dashboard (mouse click)
+    win_title = Settings.WINDOW_TITLE + "  [DEMO MODE]"
+    turn_off = [False]
+
+    def _on_mouse(event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN and renderer.is_off_button(x, y):
+            turn_off[0] = True
+
+    cv2.namedWindow(win_title)
+    cv2.setMouseCallback(win_title, _on_mouse)
+
     try:
-        while True:
+        while not turn_off[0]:
             elapsed = time.time() - start_time
             ear_raw, mar, pitch, roll, label = _interpolate(SCENARIO, elapsed)
 
@@ -395,7 +406,7 @@ def run_demo():
             right_ear = avg_ear + np.random.normal(0, 0.003)
 
             # ── Yawn detection ──────────────────────────────────
-            yawn_active = yawn_det.update(mar)
+            yawn_active = yawn_det.update(mar, pitch, avg_ear)
 
             # ── Head pose drowsy check ──────────────────────────
             pitch_drowsy = pitch > Settings.HEAD_PITCH_THRESHOLD
@@ -415,9 +426,9 @@ def run_demo():
             # ── Alert decision ──────────────────────────────────
             ear_triggered  = consec_frames >= Settings.CONSEC_FRAMES
             pose_triggered = pose_consec   >= Settings.HEAD_POSE_CONSEC_FRAMES
-            yawn_plus_ear  = yawn_active and consec_frames >= Settings.CONSEC_FRAMES // 2
+            yawn_triggered = yawn_active
 
-            should_alert = ear_triggered or pose_triggered or yawn_plus_ear
+            should_alert = ear_triggered or pose_triggered or yawn_triggered
 
             if should_alert:
                 if not alert_active:
@@ -427,7 +438,7 @@ def run_demo():
                     if ear_triggered:  parts.append(f"EAR={avg_ear:.3f}")
                     if pose_triggered: parts.append(
                         f"Pitch={pitch:.1f}°" if pitch_drowsy else f"Roll={roll:.1f}°")
-                    if yawn_plus_ear:  parts.append("Yawn+EAR")
+                    if yawn_triggered: parts.append("Yawn")
                     print(f"\n  ⚠  [Alert #{total_alerts}] DROWSINESS | {' | '.join(parts)}")
                 alert_manager.trigger_alert(frame_counter)
                 logger.log_event(frame_counter, left_ear, right_ear, avg_ear,
@@ -475,7 +486,7 @@ def run_demo():
                 glasses_detected=False,
             )
 
-            cv2.imshow(Settings.WINDOW_TITLE + "  [DEMO MODE]", display)
+            cv2.imshow(win_title, display)
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord('q') or key == 27:
@@ -494,7 +505,15 @@ def run_demo():
                 cv2.imwrite(path, display)
                 print(f"  [Demo] Screenshot: {path}")
 
+            # Window closed with the X button
+            if cv2.getWindowProperty(win_title, cv2.WND_PROP_VISIBLE) < 1:
+                break
+
             time.sleep(1.0 / 30)   # ~30 FPS
+
+        if turn_off[0]:
+            print("
+  [Demo] TURN OFF button pressed")
 
     except KeyboardInterrupt:
         print("\n  [Demo] Interrupted")
